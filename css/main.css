@@ -1467,3 +1467,34 @@ nav .nav__tools {
     width: 100%;
     padding: 2rem 2rem 4rem 2rem;
 }
+
+.error {
+    color: red;
+}
+
+.form-add-edit .form .field input.invalid {
+    border-bottom: 1px solid red;
+}
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.pagination button {
+    border: none;
+    background-color: #f2f2f2;
+    color: #333;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.pagination button:hover {
+    background-color: #ddd;
+}
+
+#currentPage,
+#totalPages {
+    margin: 0 8px;
+}

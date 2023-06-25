@@ -38,14 +38,17 @@
                 <div class="field">
                     <label for="mail">Mail</label>
                     <input type="text" id="mail" placeholder="Mail" />
+                    <span class="error"></span>
                 </div>
                 <div class="field">
                     <label for="des">Description</label>
                     <input type="text" id="des" placeholder="Description" />
+                    <span class="error"></span>
                 </div>
                 <div class="field">
                     <label for="author">Author</label>
                     <input type="text" id="author" placeholder="Author" />
+                    <span class="error"></span>
                 </div>
                 <div class="field dflex">
                     <button id="complete">Complete</button>
@@ -126,10 +129,11 @@
                     <tbody></tbody>
                 </table>
                 <div class="pagination">
-                    <button id="prevBtn">Previous</button>
-                    <span id="currentPage">1</span> / <span id="totalPages">1</span>
-                    <button id="nextBtn">Next</button>
-                  </div>
+                    <button id="prevBtn">&laquo;</button>
+                    <span id="currentPage">1</span> /
+                    <span id="totalPages">1</span>
+                    <button id="nextBtn">&raquo;</button>
+                </div>
             </div>
         </div>
         <script

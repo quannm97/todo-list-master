@@ -24,6 +24,7 @@ window.onload = () => {
             const authorInput = document.querySelector("#author");
             let currentForm;
             let currentId;
+            const validation = new this.Validation();
 
             table.addEventListener("click", ElemDetermine);
             thead.addEventListener("click", (e) => this.sort(e));
@@ -48,22 +49,45 @@ window.onload = () => {
 
             btnComplete.addEventListener("click", (event) => {
                 event.preventDefault();
-
+                this.reset(false);
                 const mail = mailInput.value;
                 const des = desInput.value;
                 const author = authorInput.value;
                 const id = this.fakeId();
-                switch (currentForm) {
-                    case "add":
-                        this.pushData({ id, mail, des, author });
-                        hideForm(editForm);
-                        break;
-                    case "edit":
-                        this.editHandler({ id: currentId, mail, des, author });
-                        hideForm(editForm);
 
-                    default:
-                        break;
+                if (
+                    validation.check({
+                        user: { mail, des, author },
+                        rules: {
+                            mail: ["required"],
+                            des: ["required"],
+                            author: ["required"],
+                        },
+                    })
+                ) {
+                    switch (currentForm) {
+                        case "add":
+                            this.pushData({ id, mail, des, author });
+                            hideForm(editForm);
+                            this.reset(true);
+
+                            break;
+                        case "edit":
+                            this.editHandler({
+                                id: currentId,
+                                mail,
+                                des,
+                                author,
+                            });
+                            this.reset(true);
+
+                            hideForm(editForm);
+
+                        default:
+                            break;
+                    }
+                } else {
+                    this.invalidForm(validation, editForm);
                 }
             });
 
@@ -98,8 +122,6 @@ window.onload = () => {
             if (!tableRows) return;
 
             const tableRowsArray = Array.from(tableRows);
-
-            console.log(tableRowsArray);
 
             const prevButton = document.querySelector("#prevBtn");
             const nextButton = document.querySelector("#nextBtn");
@@ -172,7 +194,6 @@ window.onload = () => {
                 if (response.status === 200) {
                     console.log("Data successfully pulled from the server");
                     this.updateData(response.data);
-                    console.log(this.data);
                 } else {
                     console.log("Failed to pull from the server");
                 }
@@ -222,7 +243,6 @@ window.onload = () => {
                 );
                 if (response.status === 200) {
                     console.log("Data successfully deleted to the server");
-                    console.log(response);
                 } else {
                     console.log("Failed to delete to the server");
                 }
@@ -234,15 +254,13 @@ window.onload = () => {
             console.log(editingUser);
             const updateData = () => {
                 const updatedUserIndex = this.data.findIndex((user) => {
-                    return (
-                        parseInt(user.id) === parseInt(editingUser.id)
-                    );
+                    return parseInt(user.id) === parseInt(editingUser.id);
                 });
 
-                const newArr = [...this.data]
+                const newArr = [...this.data];
                 newArr[updatedUserIndex] = editingUser;
-                this.updateData(newArr)
-                this.renderList(newArr)
+                this.updateData(newArr);
+                this.renderList(newArr);
             };
             this.editData(editingUser) && updateData();
         },
@@ -268,9 +286,78 @@ window.onload = () => {
                 console.log(error);
             }
         },
-        validation: function (callback) {
+        Validation: function () {
             // Perform form validation
             // Code for form validation goes here
+            let messages = {};
+
+            const validateRules = {
+                required: function (attribute, data) {
+                    if (!data) {
+                        return   " is required";
+                    }
+                },
+            };
+
+            const check = (data) => {
+                const _data = data;
+                setMessages(_data);
+                return Object.keys(messages).length === 0 ? true : false;
+            };
+
+            const getMessages = () => {
+                return messages;
+            };
+
+            const setMessages = (data) => {
+                messages = {};
+                const { user, rules } = data;
+
+                for (const attribute in rules) {
+                    const _rules = rules[attribute];
+                    for (const rule of _rules) {
+                        const msg = validateRules[rule](
+                            attribute,
+                            user[attribute]
+                        );
+                        if (msg) {
+                            messages[attribute] = [msg];
+                        }
+                    }
+                }
+            };
+            return {
+                check: check,
+                setMessages: setMessages,
+                getMessages: getMessages,
+            };
+        },
+        invalidForm: function (validation, editForm) {
+            const messages = validation.getMessages();
+
+            function animate() {
+                editForm.style.animation = "invalid 0.5s linear forwards";
+                setTimeout(() => {
+                    editForm.style.animation = null;
+                    clearTimeout();
+                }, 500);
+            }
+
+            function showMsg() {
+                for (const input in messages) {
+                    if (Object.hasOwnProperty.call(messages, input)) {
+                        const errMsg = messages[input][0];
+                        const element = document.querySelector("#" + input);
+
+                        element.nextElementSibling.innerHTML = element.getAttribute("placeholder") + errMsg;
+
+                        element.classList.add("invalid");
+                    }
+                }
+            }
+
+            animate();
+            showMsg();
         },
         fakeId: function () {
             return Math.floor(Math.random() * Date.now());
@@ -278,8 +365,6 @@ window.onload = () => {
         renderList: function (data) {
             const table = document.querySelector("tbody");
             table.innerHTML = "";
-
-            console.log(this.data);
 
             const users = data;
             users.map((user, index) => {
@@ -303,6 +388,17 @@ window.onload = () => {
                     </td>
                 </tr>`
             );
+        },
+        reset: function (isPass) {
+            const inputs = document.querySelectorAll(".field input");
+            const shouldClearValues  = isPass;
+            inputs.forEach((input) => {
+                input.classList.remove("invalid");
+                input.nextElementSibling.innerHTML = "";
+                if (shouldClearValues ) {
+                    input.value = ''
+                }
+            });
         },
     };
 
