@@ -1,12 +1,13 @@
 window.onload = () => {
     const table = {
+        data: [],
         init: function () {
             this.todoList();
         },
         todoList: async function () {
-            await this.renderList();
+            await this.pullData();
             this.setupEventListeners();
-            this.pagination();
+            this.renderList(this.data);
         },
         setupEventListeners: function () {
             const btnAdd = document.querySelector(".btnAdd");
@@ -17,6 +18,7 @@ window.onload = () => {
             const deleteForm = document.querySelector(".form-delete");
             const editForm = document.querySelector(".form-add-edit");
             const table = document.querySelector("table");
+            const thead = document.querySelector("thead");
             const mailInput = document.querySelector("#mail");
             const desInput = document.querySelector("#des");
             const authorInput = document.querySelector("#author");
@@ -24,14 +26,15 @@ window.onload = () => {
             let currentId;
 
             table.addEventListener("click", ElemDetermine);
+            thead.addEventListener("click", (e) => this.sort(e));
 
             btnNo.addEventListener("click", () => {
                 deleteForm.classList.remove("active");
             });
 
             btnYes.addEventListener("click", () => {
-                currentId && this.deleteHandler(currentId);
                 hideForm(deleteForm);
+                currentId && this.deleteHandler(currentId);
             });
 
             btnCancel.addEventListener("click", () => {
@@ -56,7 +59,7 @@ window.onload = () => {
                         hideForm(editForm);
                         break;
                     case "edit":
-                        this.editHandler({ currentId, mail, des, author });
+                        this.editHandler({ id: currentId, mail, des, author });
                         hideForm(editForm);
 
                     default:
@@ -87,60 +90,98 @@ window.onload = () => {
             }
         },
         pagination: function () {
+            // console.log(1);
             const tableRows = document.querySelectorAll("table tbody tr");
-            console.log(tableRows);
-            if (tableRows) {
-                const tableRowsArray = Array.from(tableRows);
-                const prevButton = document.querySelector("#prevBtn");
-                const nextButton = document.querySelector("#nextBtn");
+            const crrPage = document.querySelector("#currentPage");
+            const ttPages = document.querySelector("#totalPages");
 
-                function showPage(page) {
-                    const itemsPerPage = 5;
-                    const start = (page - 1) * itemsPerPage;
-                    const end = start + itemsPerPage;
+            if (!tableRows) return;
 
-                    tableRowsArray.forEach((row, index) => {
-                        if (index >= start && index < end) {
-                            row.style.display = "table-row";
-                        } else {
-                            row.style.display = "none";
-                        }
-                    });
-                }
+            const tableRowsArray = Array.from(tableRows);
 
-                let currentPage = 1;
-                const totalPages = Math.ceil(tableRowsArray.length / 5);
+            console.log(tableRowsArray);
 
-                showPage(currentPage);
+            const prevButton = document.querySelector("#prevBtn");
+            const nextButton = document.querySelector("#nextBtn");
 
-                prevButton.addEventListener("click", () => {
-                    if (currentPage > 1) {
-                        currentPage--;
-                        showPage(currentPage);
-                    }
-                });
+            let currentPage = 1;
 
-                nextButton.addEventListener("click", () => {
-                    if (currentPage < totalPages) {
-                        currentPage++;
-                        showPage(currentPage);
-                    }
+            const calculateTotalPages = () => {
+                const itemsPerPage = 5;
+                return Math.ceil(this.data.length / itemsPerPage);
+            };
+
+            function showPage(page) {
+                const itemsPerPage = 5;
+                const start = (page - 1) * itemsPerPage;
+                const end = start + itemsPerPage;
+
+                tableRowsArray.forEach((row, index) => {
+                    row.style.display =
+                        index >= start && index < end ? "table-row" : "none";
                 });
             }
+
+            function updatePaginationText() {
+                ttPages.textContent = calculateTotalPages();
+                crrPage.textContent = currentPage;
+            }
+
+            function goToPrevPage() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    showPage(currentPage);
+                    updatePaginationText();
+                }
+            }
+
+            function goToNextPage() {
+                const totalPages = calculateTotalPages();
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    showPage(currentPage);
+                    updatePaginationText();
+                }
+            }
+
+            prevButton.addEventListener("click", goToPrevPage);
+            nextButton.addEventListener("click", goToNextPage);
+
+            showPage(1);
+            updatePaginationText();
         },
+
+        sort: function (e) {
+            console.log(e.target);
+
+            const typeSort = e.target.closest("th").dataset.col;
+
+            this.data.sort((a, b) => {
+                // console.log(a,b);
+                return a[typeSort].toLowerCase() > b[typeSort].toLowerCase()
+                    ? 1
+                    : -1;
+            });
+            this.renderList(this.data);
+        },
+
         pullData: async function () {
             // Retrieve data from server and update table
             try {
                 const response = await axios.get("http://localhost:3000/users");
                 if (response.status === 200) {
                     console.log("Data successfully pulled from the server");
-                    return response;
+                    this.updateData(response.data);
+                    console.log(this.data);
                 } else {
                     console.log("Failed to pull from the server");
                 }
             } catch (error) {
                 console.log(error);
             }
+        },
+        updateData: function (newData) {
+            this.data = newData;
         },
         pushData: async function ({ id, mail, des, author }) {
             // Push data to server
@@ -156,7 +197,9 @@ window.onload = () => {
                 );
                 if (response.status === 201) {
                     console.log("Data successfully pushed to the server");
-                    this.renderList();
+                    const newArr = [...this.data, { id, mail, des, author }];
+                    this.updateData(newArr);
+                    this.renderList(newArr);
                 } else {
                     console.log("Failed to push to the server");
                 }
@@ -164,7 +207,14 @@ window.onload = () => {
                 console.log(error);
             }
         },
-        deleteHandler: async function (id) {
+        deleteHandler: function name(id) {
+            const oldArr = this.data;
+            const newArr = oldArr.filter((user) => user.id !== id);
+            this.updateData(newArr);
+            this.deleteData(id);
+            this.renderList(newArr);
+        },
+        deleteData: async function (id) {
             // Delete item from server based on ID
             try {
                 const response = await axios.delete(
@@ -172,7 +222,7 @@ window.onload = () => {
                 );
                 if (response.status === 200) {
                     console.log("Data successfully deleted to the server");
-                    this.renderList();
+                    console.log(response);
                 } else {
                     console.log("Failed to delete to the server");
                 }
@@ -180,12 +230,27 @@ window.onload = () => {
                 console.log(error);
             }
         },
-        editHandler: async function (user) {
+        editHandler: function (editingUser) {
+            console.log(editingUser);
+            const updateData = () => {
+                const updatedUserIndex = this.data.findIndex((user) => {
+                    return (
+                        parseInt(user.id) === parseInt(editingUser.id)
+                    );
+                });
+
+                const newArr = [...this.data]
+                newArr[updatedUserIndex] = editingUser;
+                this.updateData(newArr)
+                this.renderList(newArr)
+            };
+            this.editData(editingUser) && updateData();
+        },
+        editData: async function (user) {
             // Edit item in server based on ID
-            console.log(user);
             try {
                 const response = await axios.put(
-                    `http://localhost:3000/users/${user.currentId}`,
+                    `http://localhost:3000/users/${user.id}`,
 
                     {
                         mail: user.mail,
@@ -195,7 +260,7 @@ window.onload = () => {
                 );
                 if (response.status === 200) {
                     console.log("Data successfully edited to the server");
-                    this.renderList();
+                    return true;
                 } else {
                     console.log("Failed to edit to the server");
                 }
@@ -210,15 +275,17 @@ window.onload = () => {
         fakeId: function () {
             return Math.floor(Math.random() * Date.now());
         },
-        renderList: async function () {
+        renderList: function (data) {
             const table = document.querySelector("tbody");
             table.innerHTML = "";
 
-            const response = await this.pullData();
-            const users = response.data;
+            console.log(this.data);
+
+            const users = data;
             users.map((user, index) => {
                 this.renderUser(table, user, index);
             });
+            this.pagination();
         },
         renderUser: function (position, user, index) {
             position.insertAdjacentHTML(
