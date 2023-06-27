@@ -68,7 +68,7 @@ window.onload = () => {
                 ) {
                     switch (currentForm) {
                         case "add":
-                            this.pushData({ id, mail, des, author });
+                            this.addHandler({ id, mail, des, author });
                             hideForm(editForm);
                             this.reset(true);
 
@@ -216,15 +216,19 @@ window.onload = () => {
                 });
                 if (response.status === 201) {
                     console.log("Data successfully pushed to the server");
-                    const newArr = [...this.data, { id, mail, des, author }];
-                    this.updateData(newArr);
-                    this.renderList(newArr);
                 } else {
                     console.log("Failed to push to the server");
                 }
             } catch (error) {
                 console.log(error);
             }
+        },
+        addHandler: function ({ id, mail, des, author }) {
+            this.pushData({ id, mail, des, author });
+            const newArr = [...this.data, { id, mail, des, author }];
+            this.updateData(newArr);
+            this.renderList(newArr);
+
         },
         deleteHandler: function name(id) {
             const oldArr = this.data;
