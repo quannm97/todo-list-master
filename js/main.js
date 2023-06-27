@@ -1,4 +1,5 @@
 window.onload = () => {
+    const baseURL = "https://adventurous-dove-sundress.cyclic.app/";
     const table = {
         data: [],
         init: function () {
@@ -190,7 +191,7 @@ window.onload = () => {
         pullData: async function () {
             // Retrieve data from server and update table
             try {
-                const response = await axios.get("http://localhost:3000/users");
+                const response = await axios.get(baseURL + "users");
                 if (response.status === 200) {
                     console.log("Data successfully pulled from the server");
                     this.updateData(response.data);
@@ -207,15 +208,12 @@ window.onload = () => {
         pushData: async function ({ id, mail, des, author }) {
             // Push data to server
             try {
-                const response = await axios.post(
-                    "http://localhost:3000/users",
-                    {
-                        id: id,
-                        mail: mail,
-                        des: des,
-                        author: author,
-                    }
-                );
+                const response = await axios.post(baseURL + "users", {
+                    id: id,
+                    mail: mail,
+                    des: des,
+                    author: author,
+                });
                 if (response.status === 201) {
                     console.log("Data successfully pushed to the server");
                     const newArr = [...this.data, { id, mail, des, author }];
@@ -238,9 +236,7 @@ window.onload = () => {
         deleteData: async function (id) {
             // Delete item from server based on ID
             try {
-                const response = await axios.delete(
-                    `http://localhost:3000/users/${id}`
-                );
+                const response = await axios.delete(baseURL + `users/${id}`);
                 if (response.status === 200) {
                     console.log("Data successfully deleted to the server");
                 } else {
@@ -268,7 +264,7 @@ window.onload = () => {
             // Edit item in server based on ID
             try {
                 const response = await axios.put(
-                    `http://localhost:3000/users/${user.id}`,
+                    baseURL + `users/${user.id}`,
 
                     {
                         mail: user.mail,
@@ -294,7 +290,7 @@ window.onload = () => {
             const validateRules = {
                 required: function (attribute, data) {
                     if (!data) {
-                        return   " is required";
+                        return " is required";
                     }
                 },
             };
@@ -349,7 +345,8 @@ window.onload = () => {
                         const errMsg = messages[input][0];
                         const element = document.querySelector("#" + input);
 
-                        element.nextElementSibling.innerHTML = element.getAttribute("placeholder") + errMsg;
+                        element.nextElementSibling.innerHTML =
+                            element.getAttribute("placeholder") + errMsg;
 
                         element.classList.add("invalid");
                     }
@@ -391,12 +388,12 @@ window.onload = () => {
         },
         reset: function (isPass) {
             const inputs = document.querySelectorAll(".field input");
-            const shouldClearValues  = isPass;
+            const shouldClearValues = isPass;
             inputs.forEach((input) => {
                 input.classList.remove("invalid");
                 input.nextElementSibling.innerHTML = "";
-                if (shouldClearValues ) {
-                    input.value = ''
+                if (shouldClearValues) {
+                    input.value = "";
                 }
             });
         },
